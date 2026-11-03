@@ -4,7 +4,9 @@ import logo from "./assets/logo.png";
 
 
 
-const API_URL = "https://cafria-online-food-ordering-e7au-8mhj6vjuc-online-biography.vercel.app/";
+
+
+const API = "https://cafria-online-food-ordering-e7au-8mhj6vjuc-online-biography.vercel.app";
 const money = (amount) => `₱${Number(amount || 0).toFixed(2)}`;
 
 
