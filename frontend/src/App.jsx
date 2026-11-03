@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useState } from "react";
-import "./app.css";
+import "./App.css";
 import logo from "./assets/logo.png";
 
 
