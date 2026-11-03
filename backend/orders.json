@@ -1,0 +1,156 @@
+[
+  {
+    "id": "b70353c9-18df-4c05-8c57-39ab234c6658",
+    "number": "0001",
+    "customerName": "Guest",
+    "items": [
+      {
+        "id": "chickenjoy",
+        "name": "Chickenjoy",
+        "emoji": "🍗",
+        "price": 99,
+        "quantity": 2
+      }
+    ],
+    "total": 198,
+    "orderType": "QR Code",
+    "paymentMethod": "Cash",
+    "paymentStatus": "Pay at counter",
+    "status": "Completed",
+    "createdAt": "2026-10-21T14:21:07.494Z",
+    "qrCode": "data:image/png;base64,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",
+    "updatedAt": "2026-10-21T14:21:41.221Z"
+  },
+  {
+    "id": "27e3edb0-1efd-431d-b1a9-fbda758c8b7c",
+    "number": "0002",
+    "customerName": "Guest",
+    "items": [
+      {
+        "id": "chickenjoy",
+        "name": "Crispy Fried Chicken",
+        "emoji": "🍗",
+        "price": 132,
+        "basePrice": 99,
+        "quantity": 1,
+        "addons": [
+          {
+            "id": "rice",
+            "name": "Extra rice",
+            "price": 15,
+            "emoji": "🍚"
+          },
+          {
+            "id": "egg",
+            "name": "Fried egg",
+            "price": 18,
+            "emoji": "🍳"
+          }
+        ],
+        "addonNames": [
+          "Extra rice",
+          "Fried egg"
+        ]
+      }
+    ],
+    "total": 132,
+    "orderType": "QR Code",
+    "paymentMethod": "Cash",
+    "paymentStatus": "Pay at counter",
+    "status": "Completed",
+    "createdAt": "2026-10-21T15:03:12.612Z",
+    "qrCode": "data:image/png;base64,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",
+    "updatedAt": "2026-10-21T15:03:22.960Z"
+  },
+  {
+    "id": "8cc8dfbe-80f4-4c63-b973-be901b198afd",
+    "number": "0003",
+    "customerName": "Guest",
+    "items": [
+      {
+        "id": "fries",
+        "name": "Large Fries",
+        "emoji": "🍟",
+        "price": 55,
+        "basePrice": 55,
+        "quantity": 1,
+        "addons": [],
+        "addonNames": []
+      }
+    ],
+    "total": 55,
+    "orderType": "Manual",
+    "paymentMethod": "Cash",
+    "paymentStatus": "Pay at counter",
+    "status": "Completed",
+    "createdAt": "2026-10-21T15:08:06.191Z",
+    "updatedAt": "2026-10-21T15:08:16.006Z"
+  },
+  {
+    "id": "6afdfe71-8adf-465c-a8ab-d80fa5d6a958",
+    "number": "0004",
+    "customerName": "Guest",
+    "items": [
+      {
+        "id": "cheesy-bacon-silog",
+        "name": "Cheesy Bacon Silog",
+        "emoji": "🧀",
+        "price": 150,
+        "basePrice": 135,
+        "quantity": 1,
+        "addons": [
+          {
+            "id": "rice",
+            "name": "Extra rice",
+            "price": 15,
+            "emoji": "🍚"
+          }
+        ],
+        "addonNames": [
+          "Extra rice"
+        ]
+      }
+    ],
+    "total": 150,
+    "orderType": "QR Code",
+    "paymentMethod": "Cash",
+    "paymentStatus": "Pay at counter",
+    "status": "Completed",
+    "createdAt": "2026-10-25T14:26:13.086Z",
+    "qrCode": "data:image/png;base64,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",
+    "updatedAt": "2026-10-25T14:26:17.173Z"
+  },
+  {
+    "id": "f0eadfbc-fc6e-44cf-a20f-6d7e966bd219",
+    "number": "0005",
+    "customerName": "Guest",
+    "items": [
+      {
+        "id": "bacon-silog",
+        "name": "Bacon Silog",
+        "emoji": "🍲",
+        "price": 140,
+        "basePrice": 125,
+        "quantity": 1,
+        "addons": [
+          {
+            "id": "rice",
+            "name": "Extra rice",
+            "price": 15,
+            "emoji": "🍚"
+          }
+        ],
+        "addonNames": [
+          "Extra rice"
+        ]
+      }
+    ],
+    "total": 140,
+    "orderType": "Manual",
+    "paymentMethod": "Cash",
+    "paymentStatus": "Pay at counter",
+    "status": "Completed",
+    "createdAt": "2026-10-25T14:33:04.111Z",
+    "updatedAt": "2026-10-25T14:33:09.421Z"
+  }
+]
