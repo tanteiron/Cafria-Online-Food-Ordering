@@ -106,7 +106,7 @@ export default function App() {
     setSubmitting(true);
     setNotice("");
     try {
-      const response = await fetch(`${API}/orders`, {
+      const response = await fetch(`${API}/api/orders`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -133,7 +133,7 @@ export default function App() {
 
   async function updateStatus(orderId, status) {
     try {
-      const response = await fetch(`${API}/orders/${orderId}/status`, {
+      const response = await fetch(`${API}/api/orders/${orderId}/status`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ status })
