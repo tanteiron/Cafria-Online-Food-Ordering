@@ -41,7 +41,7 @@ export default function App() {
 
   async function loadMenu() {
     try {
-      const response = await fetch(`${API}/menu`);
+      const response = await fetch(`${API}/api/menu`);
       if (!response.ok) throw new Error("Could not load menu");
       setMenu(await response.json());
     } catch {
@@ -53,7 +53,7 @@ export default function App() {
 
   async function loadOrders() {
     try {
-      const response = await fetch(`${API}/orders`);
+      const response = await fetch(`${API}/api/orders`);
       if (response.ok) setOrders(await response.json());
     } catch {
       // Keep the page usable if the queue is temporarily unavailable.
