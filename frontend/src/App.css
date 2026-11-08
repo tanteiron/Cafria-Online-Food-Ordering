@@ -1877,55 +1877,6 @@ input:focus-visible {
   min-width: 18px;
   text-align: center;
 }
-
-.addon-list {
-  display: grid;
-  gap: 8px;
-}
-
-.addon-option {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  padding: 10px 11px;
-  border: 1px solid var(--line);
-  border-radius: 9px;
-  cursor: pointer;
-  background: white;
-}
-
-.addon-option:has(input:checked) {
-  border-color: var(--red);
-  background: #fff8f4;
-}
-
-.addon-option input {
-  accent-color: var(--red);
-}
-
-.addon-option>span:nth-of-type(1) {
-  font-size: 22px;
-}
-
-.addon-name {
-  flex: 1;
-  font-size: 12px;
-  font-weight: 700;
-}
-
-.addon-name small {
-  display: block;
-  color: #99998f;
-  font-size: 9px;
-  font-weight: 400;
-  margin-top: 3px;
-}
-
-.addon-option strong {
-  font-size: 11px;
-  color: var(--red);
-}
-
 .modal-actions {
   display: flex;
   gap: 10px;

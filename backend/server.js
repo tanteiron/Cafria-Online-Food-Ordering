@@ -230,10 +230,12 @@ app.post("/api/orders", async (req, res, next) => {
       const chosenAddons = [...new Set(requestedAddons)].map((addonId) => addonCatalog.find((a) => a.id === addonId)).filter(Boolean).filter((a) => !(isSnack && a.id === "rice"));
       const addonTotal = chosenAddons.reduce((sum, addon) => sum + addon.price, 0);
       cleanItems.push({
-        id: menuItem.id, name: menuItem.name, emoji: menuItem.emoji,
-        price: menuItem.price + addonTotal, basePrice: menuItem.price, quantity,
-        addons: chosenAddons, addonNames: chosenAddons.map((a) => a.name)
-      });
+  id: menuItem.id,
+  name: menuItem.name,
+  emoji: menuItem.emoji,
+  price: menuItem.price,
+  quantity
+});
     }
 
     const orders = await readOrders();
@@ -257,7 +259,10 @@ app.post("/api/orders", async (req, res, next) => {
         orderNumber: order.number,
         customer: order.customerName,
         total: order.total,
-        items: order.items.map(({ name, quantity, addonNames }) => ({ name, quantity, addons: addonNames || [] }))
+        items: order.items.map(({ name, quantity }) => ({
+  name,
+  quantity
+}))
       });
       order.qrCode = await QRCode.toDataURL(qrPayload, { width: 280, margin: 2 });
     }

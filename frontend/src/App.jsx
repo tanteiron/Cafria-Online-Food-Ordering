@@ -29,15 +29,8 @@ export default function App() {
   const [notice, setNotice] = useState("");
   const [selectedMeal, setSelectedMeal] = useState(null);
   const [mealQty, setMealQty] = useState(1);
-  const [mealAddons, setMealAddons] = useState([]);
   const [showCart, setShowCart] = useState(false);
   const [showPayment, setShowPayment] = useState(false);
-  const addons = [
-    { id: "rice", name: "Extra rice", price: 15, emoji: "🍚" },
-    { id: "drink", name: "Soft drink", price: 25, emoji: "🥤" },
-    { id: "gravy", name: "Extra gravy", price: 10, emoji: "🥣" },
-    { id: "egg", name: "Fried egg", price: 18, emoji: "🍳" }
-  ];
 
   async function loadMenu() {
     try {
@@ -73,31 +66,45 @@ export default function App() {
     `${item.name} ${item.description}`.toLowerCase().includes(search.toLowerCase())
   );
 
-  const cartItems = useMemo(() => menu
-    .filter((item) => cart[item.id]?.quantity > 0)
-    .map((item) => {
-      const entry = cart[item.id];
-      const chosenAddons = (entry.addons || []).map((id) => addons.find((a) => a.id === id)).filter(Boolean);
-      const unitPrice = item.price + chosenAddons.reduce((sum, a) => sum + a.price, 0);
-      return { ...item, quantity: entry.quantity, addons: chosenAddons, unitPrice };
-    }), [menu, cart]);
-  const total = cartItems.reduce((sum, item) => sum + item.unitPrice * item.quantity, 0);
-  const itemCount = cartItems.reduce((sum, item) => sum + item.quantity, 0);
+  const cartItems = useMemo(
+  () =>
+    menu
+      .filter((item) => cart[item.id]?.quantity > 0)
+      .map((item) => ({
+        ...item,
+        quantity: cart[item.id].quantity,
+        unitPrice: item.price
+      })),
+  [menu, cart]
+);
+
+const total = cartItems.reduce(
+  (sum, item) => sum + item.unitPrice * item.quantity,
+  0
+);
+
+const itemCount = cartItems.reduce(
+  (sum, item) => sum + item.quantity,
+  0
+);
 
   function openMeal(item) {
-    setSelectedMeal(item);
-    setMealQty(cart[item.id]?.quantity || 1);
-    setMealAddons(cart[item.id]?.addons || []);
+  setSelectedMeal(item);
+  setMealQty(cart[item.id]?.quantity || 1);
+
   }
   function saveMeal() {
-    if (!selectedMeal) return;
-    setCart((current) => ({ ...current, [selectedMeal.id]: { quantity: mealQty, addons: mealAddons } }));
-    setSelectedMeal(null);
-  }
-  function removeMeal(id) {
-    setCart((current) => { const next = { ...current }; delete next[id]; return next; });
-  }
+  if (!selectedMeal) return;
 
+  setCart((current) => ({
+    ...current,
+    [selectedMeal.id]: {
+      quantity: mealQty
+    }
+  }));
+
+  setSelectedMeal(null);
+}
   async function placeOrder() {
     if (!cartItems.length) {
       setNotice("Please add food to your order first.");
@@ -113,7 +120,10 @@ export default function App() {
           customerName: customerName.trim() || "Guest",
           orderType,
           paymentMethod,
-          items: cartItems.map(({ id, quantity, addons: chosen }) => ({ id, quantity, addons: chosen.map((a) => a.id) }))
+          items: cartItems.map(({ id, quantity }) => ({
+  id,
+  quantity
+}))
         })
       });
       const data = await response.json();
@@ -321,19 +331,16 @@ export default function App() {
           <h2 id="meal-modal-title">{selectedMeal.name}</h2><p className="modal-description">{selectedMeal.description}</p>
           <div className="modal-base-price">Base price <strong>{money(selectedMeal.price)}</strong></div>
           <label className="field-label">Quantity</label><div className="modal-quantity"><button onClick={() => setMealQty(q => Math.max(1, q - 1))}>−</button><strong>{mealQty}</strong><button onClick={() => setMealQty(q => Math.min(99, q + 1))}>＋</button></div>
-          <label className="field-label">Add-ons (optional)</label><div className="addon-list">
-            {addons.filter(a => !((selectedMeal.category === "Snacks" || ["fries", "turon", "lumpia"].includes(selectedMeal.id)) && a.id === "rice")).map(a => <label className="addon-option" key={a.id}>
-              <input type="checkbox" checked={mealAddons.includes(a.id)} onChange={e => setMealAddons(cur => e.target.checked ? [...cur, a.id] : cur.filter(id => id !== a.id))} />
-              <span>{a.emoji}</span><span className="addon-name">{a.name}<small>Optional extra</small></span><strong>{money(a.price)}</strong>
-            </label>)}
-          </div>
-          <div className="total-row"><span>Subtotal</span><strong>{money((selectedMeal.price + addons.filter(a => mealAddons.includes(a.id)).reduce((n, a) => n + a.price, 0)) * mealQty)}</strong></div>
+          <div className="total-row">
+  <span>Subtotal</span>
+  <strong>{money(selectedMeal.price * mealQty)}</strong>
+</div>
           <div className="modal-actions"><button className="secondary-button" onClick={() => setSelectedMeal(null)}>Cancel</button><button className="place-order-button" onClick={saveMeal}>Save meal <span>✓</span></button></div>
         </section></div>}
 
       {showCart && <div className="modal-backdrop" onClick={() => setShowCart(false)}><section className="order-modal cart-modal" role="dialog" aria-modal="true" aria-labelledby="cart-modal-title" onClick={e => e.stopPropagation()}>
         <button className="modal-close" onClick={() => setShowCart(false)}>×</button><span className="eyebrow">YOUR ORDER</span><h2 id="cart-modal-title">Review your basket</h2><p className="modal-description">Cancel items or add another meal before finalizing.</p>
-        {cartItems.length ? <div className="cart-list modal-cart-list">{cartItems.map(item => <div className="cart-row" key={item.id}><span className="cart-emoji">{item.emoji}</span><div className="cart-item-name"><b>{item.name} × {item.quantity}</b><small>{item.addons.length ? item.addons.map(a => `${a.name} (+${money(a.price)})`).join(", ") : "No add-ons"}</small></div><strong>{money(item.unitPrice * item.quantity)}</strong><button className="remove-cart-item" onClick={() => removeMeal(item.id)} title="Cancel this item">×</button></div>)}</div> : <div className="cart-empty">No meals in your order yet.</div>}
+        {cartItems.length ? <div className="cart-list modal-cart-list">{cartItems.map(item => <div className="cart-row" key={item.id}><span className="cart-emoji">{item.emoji}</span><div className="cart-item-name"><b>{item.name} × {item.quantity}</b><small>Quantity: {item.quantity}</small></div><strong>{money(item.unitPrice * item.quantity)}</strong><button className="remove-cart-item" onClick={() => removeMeal(item.id)} title="Cancel this item">×</button></div>)}</div> : <div className="cart-empty">No meals in your order yet.</div>}
         <label className="field-label" htmlFor="customerNameModal">Name for the order (optional)</label><input className="text-field" id="customerNameModal" value={customerName} onChange={e => setCustomerName(e.target.value)} placeholder="Enter your name" maxLength={80} />
         <div className="total-row"><span>Total</span><strong>{money(total)}</strong></div><div className="modal-actions">
           <button className="secondary-button" onClick={() => { setShowCart(false); document.getElementById("menu")?.scrollIntoView({ behavior: "smooth" }); }}>＋ Add another meal</button>
@@ -365,7 +372,15 @@ export default function App() {
           <div className="receipt-check">✓</div><span className="eyebrow">{receiptIsHistory ? "RECEIPT" : "ORDER RECEIVED"}</span><h2 id="receipt-title">{receiptIsHistory ? `Order #${receiptOrder.number}` : "You're all set!"}</h2><p className="receipt-subtitle">{receiptIsHistory ? "Saved copy of this order's receipt." : "Keep your order number for collection."}</p>
           <div className="receipt-number"><small>YOUR ORDER NUMBER</small><strong>#{receiptOrder.number}</strong><span className="status-pill">{receiptOrder.status}</span></div>
           {receiptOrder.qrCode && <div className="qr-ticket"><img src={receiptOrder.qrCode} alt={`QR code for order ${receiptOrder.number}`} /><p>Scan this QR code to view your order ticket.</p></div>}
-          <div className="receipt-lines">{receiptOrder.items.map((item) => <div key={item.id}><span>{item.emoji} {item.name} × {item.quantity}{item.addonNames?.length > 0 && <small className="receipt-addons">+ {item.addonNames.join(", ")}</small>}</span><b>{money(item.price * item.quantity)}</b></div>)}</div>
+          <div className="receipt-lines">{receiptOrder.items.map((item) => (
+  <div key={item.id}>
+    <span>
+      {item.emoji} {item.name} × {item.quantity}
+    </span>
+
+    <b>{money(item.price * item.quantity)}</b>
+  </div>
+))}</div>
           <div className="receipt-total"><span>Total</span><strong>{money(receiptOrder.total)}</strong></div>
           <div className="receipt-info">{receiptIsHistory && <><span>Customer</span><b>{receiptOrder.customerName}</b><span>Date</span><b>{new Date(receiptOrder.createdAt).toLocaleString()}</b></>}<span>Ordering method</span><b>{receiptOrder.orderType}</b><span>Payment</span><b>{receiptOrder.paymentMethod}</b><span>Payment status</span><b>{receiptOrder.paymentStatus}</b></div>
           {receiptOrder.paymentMethod === "GCash" && <p className="payment-note">Demo only — no real GCash payment has been sent or confirmed.</p>}
