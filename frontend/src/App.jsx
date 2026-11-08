@@ -67,44 +67,44 @@ export default function App() {
   );
 
   const cartItems = useMemo(
-  () =>
-    menu
-      .filter((item) => cart[item.id]?.quantity > 0)
-      .map((item) => ({
-        ...item,
-        quantity: cart[item.id].quantity,
-        unitPrice: item.price
-      })),
-  [menu, cart]
-);
+    () =>
+      menu
+        .filter((item) => cart[item.id]?.quantity > 0)
+        .map((item) => ({
+          ...item,
+          quantity: cart[item.id].quantity,
+          unitPrice: item.price
+        })),
+    [menu, cart]
+  );
 
-const total = cartItems.reduce(
-  (sum, item) => sum + item.unitPrice * item.quantity,
-  0
-);
+  const total = cartItems.reduce(
+    (sum, item) => sum + item.unitPrice * item.quantity,
+    0
+  );
 
-const itemCount = cartItems.reduce(
-  (sum, item) => sum + item.quantity,
-  0
-);
+  const itemCount = cartItems.reduce(
+    (sum, item) => sum + item.quantity,
+    0
+  );
 
   function openMeal(item) {
-  setSelectedMeal(item);
-  setMealQty(cart[item.id]?.quantity || 1);
+    setSelectedMeal(item);
+    setMealQty(cart[item.id]?.quantity || 1);
 
   }
   function saveMeal() {
-  if (!selectedMeal) return;
+    if (!selectedMeal) return;
 
-  setCart((current) => ({
-    ...current,
-    [selectedMeal.id]: {
-      quantity: mealQty
-    }
-  }));
+    setCart((current) => ({
+      ...current,
+      [selectedMeal.id]: {
+        quantity: mealQty
+      }
+    }));
 
-  setSelectedMeal(null);
-}
+    setSelectedMeal(null);
+  }
   async function placeOrder() {
     if (!cartItems.length) {
       setNotice("Please add food to your order first.");
@@ -121,9 +121,9 @@ const itemCount = cartItems.reduce(
           orderType,
           paymentMethod,
           items: cartItems.map(({ id, quantity }) => ({
-  id,
-  quantity
-}))
+            id,
+            quantity
+          }))
         })
       });
       const data = await response.json();
@@ -179,25 +179,25 @@ const itemCount = cartItems.reduce(
   return (
     <div className="app-shell">
       <header className="topbar">
-       <a
-  className="brand"
-  href="#"
-  onClick={(e) => {
-    e.preventDefault();
-    setActiveTab("Order Food");
-  }}
->
-  <span className="brand-mark">
-    <img src={logo} alt="Cafria logo" />
-  </span>
+        <a
+          className="brand"
+          href="#"
+          onClick={(e) => {
+            e.preventDefault();
+            setActiveTab("Order Food");
+          }}
+        >
+          <span className="brand-mark">
+            <img src={logo} alt="Cafria logo" />
+          </span>
 
-  <span className="brand-text">
-    <strong>
-      Cafria<span className="brand-dot">.</span>
-    </strong>
-    <small>ONLINE FOOD ORDERING</small>
-  </span>
-</a>
+          <span className="brand-text">
+            <strong>
+              Cafria<span className="brand-dot">.</span>
+            </strong>
+            <small>ONLINE FOOD ORDERING</small>
+          </span>
+        </a>
         <nav className="main-nav">
           <button className={activeTab === "Order Food" ? "nav-link active" : "nav-link"} onClick={() => setActiveTab("Order Food")}>Order Food</button>
           <button className={activeTab === "Order Queue" ? "nav-link active" : "nav-link"} onClick={() => { setActiveTab("Order Queue"); loadOrders(); }}>Order Queue <span className="nav-count">{orders.filter((o) => o.status !== "Completed").length}</span></button>
@@ -216,7 +216,7 @@ const itemCount = cartItems.reduce(
                 <p>Cafria is your favorite cozy cafe in Baggao, Cagayan. Serving quality coffee, refreshing drinks, comfort food and snacks. Perfect for coffee dates, family bonding, catch-ups and hang outs..</p>
                 <button className="hero-button" onClick={() => document.getElementById("menu")?.scrollIntoView({ behavior: "smooth" })}>Explore menu <span>↓</span></button>
               </div>
-             <div className="hero-art">
+              <div className="hero-art">
               </div>
             </section>
 
@@ -232,26 +232,26 @@ const itemCount = cartItems.reduce(
                 <div className="food-grid">
                   {visibleMenu.map((item) => (
                     <article className="food-card" key={item.id}>
-                     <div className={`food-visual food-${item.id}`}>
-  {item.popular && (
-    <span className="popular-tag">★ BESTSELLER</span>
-  )}
+                      <div className={`food-visual food-${item.id}`}>
+                        {item.popular && (
+                          <span className="popular-tag">★ BESTSELLER</span>
+                        )}
 
-  {item.image && (
-    <img
-      src={item.image}
-      alt={item.name}
-      className="food-image"
-    />
-  )}
-</div>
+                        {item.image && (
+                          <img
+                            src={item.image}
+                            alt={item.name}
+                            className="food-image"
+                          />
+                        )}
+                      </div>
 
                       <div className="food-details">
                         <div className="food-title-row"><h3>{item.name}</h3><strong>{money(item.price)}</strong></div>
                         <p>{item.description}</p>
                         <div className="food-card-bottom">
                           <span className="food-category">{item.category}</span>
-                          <button className="add-button" onClick={() => openMeal(item)} aria-label={`Customize ${item.name}`}>{cart[item.id]?.quantity ? "✎ Edit" : "＋ Customize"}</button>
+                          <button className="add-button" onClick={() => openMeal(item)} aria-label={`Select ${item.name}`}>{cart[item.id]?.quantity ? "✎ Edit" : "＋ Select"}</button>
                         </div>
                       </div>
                     </article>
@@ -321,20 +321,20 @@ const itemCount = cartItems.reduce(
       {selectedMeal && <div className="modal-backdrop" onClick={() => setSelectedMeal(null)}>
         <section className="order-modal" role="dialog" aria-modal="true" aria-labelledby="meal-modal-title" onClick={e => e.stopPropagation()}>
           <button className="modal-close" onClick={() => setSelectedMeal(null)}>×</button>
-         {selectedMeal.image && (
-  <img
-    src={selectedMeal.image}
-    alt={selectedMeal.name}
-    className="food-image modal-food-image"
-  />
-)}<span className="eyebrow">CUSTOMIZE YOUR MEAL</span>
+          {selectedMeal.image && (
+            <img
+              src={selectedMeal.image}
+              alt={selectedMeal.name}
+              className="food-image modal-food-image"
+            />
+          )}<span className="eyebrow">SELECT YOUR MEAL</span>
           <h2 id="meal-modal-title">{selectedMeal.name}</h2><p className="modal-description">{selectedMeal.description}</p>
           <div className="modal-base-price">Base price <strong>{money(selectedMeal.price)}</strong></div>
           <label className="field-label">Quantity</label><div className="modal-quantity"><button onClick={() => setMealQty(q => Math.max(1, q - 1))}>−</button><strong>{mealQty}</strong><button onClick={() => setMealQty(q => Math.min(99, q + 1))}>＋</button></div>
           <div className="total-row">
-  <span>Subtotal</span>
-  <strong>{money(selectedMeal.price * mealQty)}</strong>
-</div>
+            <span>Subtotal</span>
+            <strong>{money(selectedMeal.price * mealQty)}</strong>
+          </div>
           <div className="modal-actions"><button className="secondary-button" onClick={() => setSelectedMeal(null)}>Cancel</button><button className="place-order-button" onClick={saveMeal}>Save meal <span>✓</span></button></div>
         </section></div>}
 
@@ -373,14 +373,14 @@ const itemCount = cartItems.reduce(
           <div className="receipt-number"><small>YOUR ORDER NUMBER</small><strong>#{receiptOrder.number}</strong><span className="status-pill">{receiptOrder.status}</span></div>
           {receiptOrder.qrCode && <div className="qr-ticket"><img src={receiptOrder.qrCode} alt={`QR code for order ${receiptOrder.number}`} /><p>Scan this QR code to view your order ticket.</p></div>}
           <div className="receipt-lines">{receiptOrder.items.map((item) => (
-  <div key={item.id}>
-    <span>
-      {item.emoji} {item.name} × {item.quantity}
-    </span>
+            <div key={item.id}>
+              <span>
+                {item.emoji} {item.name} × {item.quantity}
+              </span>
 
-    <b>{money(item.price * item.quantity)}</b>
-  </div>
-))}</div>
+              <b>{money(item.price * item.quantity)}</b>
+            </div>
+          ))}</div>
           <div className="receipt-total"><span>Total</span><strong>{money(receiptOrder.total)}</strong></div>
           <div className="receipt-info">{receiptIsHistory && <><span>Customer</span><b>{receiptOrder.customerName}</b><span>Date</span><b>{new Date(receiptOrder.createdAt).toLocaleString()}</b></>}<span>Ordering method</span><b>{receiptOrder.orderType}</b><span>Payment</span><b>{receiptOrder.paymentMethod}</b><span>Payment status</span><b>{receiptOrder.paymentStatus}</b></div>
           {receiptOrder.paymentMethod === "GCash" && <p className="payment-note">Demo only — no real GCash payment has been sent or confirmed.</p>}
