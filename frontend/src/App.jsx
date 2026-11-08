@@ -251,7 +251,12 @@ export default function App() {
                         <p>{item.description}</p>
                         <div className="food-card-bottom">
                           <span className="food-category">{item.category}</span>
-                          <button className="add-button" onClick={() => openMeal(item)} aria-label={`Select ${item.name}`}>{cart[item.id]?.quantity ? "✎ Edit" : "＋ Select"}</button>
+                          <button
+                            className="customize-btn"
+                            onClick={() => openMeal(item)}
+                          >
+                            + Add to Order
+                          </button>
                         </div>
                       </div>
                     </article>
