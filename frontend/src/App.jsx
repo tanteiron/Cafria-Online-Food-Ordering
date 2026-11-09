@@ -6,7 +6,7 @@ import logo from "./assets/logo.png";
 
 
 
-   const API = "http://localhost:3001";
+   const API = "https://cafria-online-food-ordering-e7au.vercel.app/";
 const money = (amount) => `₱${Number(amount || 0).toFixed(2)}`;
 
 
