@@ -1,23 +1,26 @@
 import express from "express";
 import cors from "cors";
-import fs from "node:fs/promises";
-import path from "node:path";
-import { fileURLToPath } from "node:url";
 import { randomUUID } from "node:crypto";
 import QRCode from "qrcode";
-
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
+import { Redis } from "@upstash/redis";
 
 const app = express();
 const PORT = process.env.PORT || 3001;
-const DB_FILE = path.join(__dirname, "orders.json");
+
+// Orders are stored in Upstash Redis (Vercel's filesystem is read-only, so orders.json can't be used).
+// Vercel's integration sets either the UPSTASH_REDIS_REST_* or the KV_REST_API_* variables.
+const redis = new Redis({
+  url: process.env.UPSTASH_REDIS_REST_URL || process.env.KV_REST_API_URL,
+  token: process.env.UPSTASH_REDIS_REST_TOKEN || process.env.KV_REST_API_TOKEN
+});
+
+const ORDERS_KEY = "orders";
+const COUNTER_KEY = "order-counter";
 
 app.use(cors());
 app.use(express.json());
 
 const MENU = [
-
   {
     id: "bacon-silog",
     name: "Bacon Silog",
@@ -27,7 +30,6 @@ const MENU = [
     emoji: "🍲",
     image: "/images/bacon-silog.png"
   },
-
   {
     id: "cheesy-bacon-silog",
     name: "Cheesy Bacon Silog",
@@ -38,7 +40,6 @@ const MENU = [
     image: "/images/cheesy-bacon-silog.jpg",
     popular: true
   },
-
   {
     id: "classic-tosilog",
     name: "Classic Tocilog",
@@ -48,7 +49,6 @@ const MENU = [
     emoji: "🍳",
     image: "/images/classic-tosilog.JPG"
   },
-
   {
     id: "cheesy-tocilog",
     name: "Cheesy Tocilog",
@@ -58,7 +58,6 @@ const MENU = [
     emoji: "🍛",
     image: "/images/cheesy-tocilog.jpg"
   },
-
   {
     id: "hungarian-silog",
     name: "Hungarian Silog",
@@ -68,7 +67,6 @@ const MENU = [
     emoji: "🍛",
     image: "/images/hungarian-silog.jpg"
   },
-
   {
     id: "k-pam-silog",
     name: "K-Pam Silog",
@@ -78,7 +76,6 @@ const MENU = [
     emoji: "🍗",
     image: "/images/k-pam-silog.jpg"
   },
-
   {
     id: "spam-musubi-egg",
     name: "Spam Musubi Egg",
@@ -86,18 +83,18 @@ const MENU = [
     description: "Spam musubi with a fried egg",
     price: 145,
     emoji: "🍳",
-    image: "images/spam-musubi-egg.jpg",
+    image: "/images/spam-musubi-egg.jpg",
     popular: true
   },
-
-  { id: "sweet-ham-silog",
-    name: "Sweet Ham Silog", 
-    category: "All Day Breakfast", 
-    description: "Sweet ham with garlic rice and egg", 
-    price: 100, 
-    emoji: "🍖", 
-    image: "/images/sweet-ham-silog.jpg" },
-
+  {
+    id: "sweet-ham-silog",
+    name: "Sweet Ham Silog",
+    category: "All Day Breakfast",
+    description: "Sweet ham with garlic rice and egg",
+    price: 100,
+    emoji: "🍖",
+    image: "/images/sweet-ham-silog.jpg"
+  },
   {
     id: "cheesy-overload-fries",
     name: "Cheesy Overload Fries",
@@ -107,7 +104,6 @@ const MENU = [
     emoji: "🍟",
     image: "/images/cheesy-overload-fries.jpg"
   },
-
   {
     id: "chicken-pop-and-fries",
     name: "Chicken Pop and Fries",
@@ -117,17 +113,17 @@ const MENU = [
     emoji: "🍗",
     image: "/images/chicken-pop-and-fries.jpg"
   },
-
-  { id: "chicken-bites",
+  {
+    id: "chicken-bites",
     name: "Chicken Bites",
     category: "Snacks",
     description: "Crispy chicken bites with a side of fries",
     price: 120,
-    emoji: "�",
+    emoji: "🍗",
     image: "/images/chicken-bites.jpg"
   },
-
-  { id: "chip-and-fries",
+  {
+    id: "chip-and-fries",
     name: "Chip and Fries",
     category: "Snacks",
     description: "Crispy chips with a side of fries",
@@ -135,68 +131,66 @@ const MENU = [
     emoji: "🍟",
     image: "/images/chip-and-fries.jpg"
   },
-
-{ id: "cheesy-nachos", 
-  name: "Cheesy Nachos", 
-  category: "Snacks", 
-  description: "Crispy tortilla chips with melted cheese", 
-  price: 250, 
-  emoji: "�", 
-  image: "/images/cheesy-nachos.jpg" },
-
-  { id: "snack-trio", 
-    name: "Snack Trio", 
-    category: "Snacks", 
-    description: "Big 3 of the snack world: fries, cheesy nachos, and chicken bites", 
-    price: 380, 
-    emoji: "🧋", 
-    image: "/images/snack-trio.jpg" },
-
-  { id: "classic-faves", 
-    name: "Classic Faves", 
-    category: "Snacks", 
-    description: "A classic snack combo of fries and chicken bites, and a side juicy hotdog", 
-    price: 430, 
+  {
+    id: "cheesy-nachos",
+    name: "Cheesy Nachos",
+    category: "Snacks",
+    description: "Crispy tortilla chips with melted cheese",
+    price: 250,
+    emoji: "🧀",
+    image: "/images/cheesy-nachos.jpg"
+  },
+  {
+    id: "snack-trio",
+    name: "Snack Trio",
+    category: "Snacks",
+    description: "Big 3 of the snack world: fries, cheesy nachos, and chicken bites",
+    price: 380,
+    emoji: "🧋",
+    image: "/images/snack-trio.jpg"
+  },
+  {
+    id: "classic-faves",
+    name: "Classic Faves",
+    category: "Snacks",
+    description: "A classic snack combo of fries and chicken bites, and a side juicy hotdog",
+    price: 430,
     emoji: "🍨",
-    image: "/images/classic-faves.jpg" },
+    image: "/images/classic-faves.jpg"
+  },
+  {
+    id: "signature-platter",
+    name: "Signature Platter",
+    category: "Snacks",
+    description: "A signature combo of savory fries, chicken pops, cheesy natchos, and a side of juicy hotdog",
+    price: 550,
+    emoji: "🥗",
+    image: "/images/signature-platter.jpg"
+  }
+];
 
-    { id: "signature-platter", 
-    name: "Signature Platter", 
-    category: "Snacks", 
-    description: "A signature combo of savory fries, chicken pops, cheesy natchos, and a side of juicy hotdog", 
-    price: 550, 
-    emoji: "🥗", 
-    image: "/images/signature-platter.jpg" }
+const ADDON_CATALOG = [
+  { id: "rice", name: "Extra rice", price: 15, emoji: "🍚" },
+  { id: "drink", name: "Soft drink", price: 25, emoji: "🥤" },
+  { id: "gravy", name: "Extra gravy", price: 10, emoji: "🥣" },
+  { id: "egg", name: "Fried egg", price: 18, emoji: "🍳" }
 ];
 
 const VALID_STATUSES = ["Confirmed", "Preparing", "Ready", "Completed"];
 
+// Each order is stored as its own entry in a Redis hash, keyed by order id.
 async function readOrders() {
-  try {
-    const raw = await fs.readFile(DB_FILE, "utf8");
-    if (!raw.trim()) return [];                 // empty file
-    const data = JSON.parse(raw);
-    return Array.isArray(data) ? data : [];
-  } catch (error) {
-    if (error.code === "ENOENT") return [];
-    if (error instanceof SyntaxError) {          // corrupted JSON
-      console.error("orders.json is corrupted, backing it up and starting fresh.");
-      await fs.rename(DB_FILE, `${DB_FILE}.bak-${Date.now()}`).catch(() => {});
-      return [];
-    }
-    throw error;
-  }
+  const all = await redis.hgetall(ORDERS_KEY);
+  return all ? Object.values(all) : [];
 }
 
-async function writeOrders(orders) {
-  const tmp = `${DB_FILE}.tmp`;
-  await fs.writeFile(tmp, JSON.stringify(orders, null, 2));
-  await fs.rename(tmp, DB_FILE);                 // avoids half-written files
+async function saveOrder(order) {
+  await redis.hset(ORDERS_KEY, { [order.id]: order });
 }
 
-function nextOrderNumber(orders) {
-  const max = orders.reduce((highest, order) => Math.max(highest, Number(order.number) || 0), 0);
-  return String(max + 1).padStart(4, "0");
+async function nextOrderNumber() {
+  const n = await redis.incr(COUNTER_KEY);
+  return String(n).padStart(4, "0");
 }
 
 app.get("/api/health", (_req, res) => res.json({ ok: true, service: "Online Food Ordering System" }));
@@ -211,7 +205,7 @@ app.get("/api/orders", async (_req, res, next) => {
 
 app.post("/api/orders", async (req, res, next) => {
   try {
-   const { customerName, items, orderType = "Manual", paymentMethod = "Cash" } = req.body || {};
+    const { customerName, items, orderType = "Manual", paymentMethod = "Cash" } = req.body || {};
     if (!Array.isArray(items) || items.length === 0) {
       return res.status(400).json({ error: "Please add at least one food item." });
     }
@@ -229,31 +223,27 @@ app.post("/api/orders", async (req, res, next) => {
       if (!menuItem || !Number.isFinite(quantity) || quantity < 1 || quantity > 99) {
         return res.status(400).json({ error: "One or more food items are invalid." });
       }
-      const addonCatalog = [
-        { id: "rice", name: "Extra rice", price: 15, emoji: "🍚" },
-        { id: "drink", name: "Soft drink", price: 25, emoji: "🥤" },
-        { id: "gravy", name: "Extra gravy", price: 10, emoji: "🥣" },
-        { id: "egg", name: "Fried egg", price: 18, emoji: "🍳" }
-      ];
       const requestedAddons = Array.isArray(item.addons) ? item.addons : [];
       const isSnack = menuItem.category === "Snacks" || ["fries", "turon", "lumpia"].includes(menuItem.id);
-      const chosenAddons = [...new Set(requestedAddons)].map((addonId) => addonCatalog.find((a) => a.id === addonId)).filter(Boolean).filter((a) => !(isSnack && a.id === "rice"));
+      const chosenAddons = [...new Set(requestedAddons)]
+        .map((addonId) => ADDON_CATALOG.find((a) => a.id === addonId))
+        .filter(Boolean)
+        .filter((a) => !(isSnack && a.id === "rice"));
       const addonTotal = chosenAddons.reduce((sum, addon) => sum + addon.price, 0);
       cleanItems.push({
-  id: menuItem.id,
-  name: menuItem.name,
-  emoji: menuItem.emoji,
-  price: menuItem.price + addonTotal,
-  basePrice: menuItem.price,
-  addons: chosenAddons.map(({ id, name, price }) => ({ id, name, price })),
-  quantity
-});
+        id: menuItem.id,
+        name: menuItem.name,
+        emoji: menuItem.emoji,
+        price: menuItem.price + addonTotal,
+        basePrice: menuItem.price,
+        addons: chosenAddons.map(({ id, name, price }) => ({ id, name, price })),
+        quantity
+      });
     }
 
-    const orders = await readOrders();
     const order = {
       id: randomUUID(),
-      number: nextOrderNumber(orders),
+      number: await nextOrderNumber(),
       customerName: String(customerName || "Guest").trim().slice(0, 80) || "Guest",
       items: cleanItems,
       total: cleanItems.reduce((sum, item) => sum + item.price * item.quantity, 0),
@@ -271,32 +261,27 @@ app.post("/api/orders", async (req, res, next) => {
         orderNumber: order.number,
         customer: order.customerName,
         total: order.total,
-        items: order.items.map(({ name, quantity }) => ({
-  name,
-  quantity
-}))
+        items: order.items.map(({ name, quantity }) => ({ name, quantity }))
       });
       order.qrCode = await QRCode.toDataURL(qrPayload, { width: 280, margin: 2 });
     }
 
-    orders.push(order);
-    await writeOrders(orders);
+    await saveOrder(order);
     res.status(201).json(order);
   } catch (error) { next(error); }
 });
 
 app.patch("/api/orders/:id/status", async (req, res, next) => {
   try {
-    const { status } = req.body;
+    const { status } = req.body || {};
     if (!VALID_STATUSES.includes(status)) {
       return res.status(400).json({ error: "Invalid order status." });
     }
-    const orders = await readOrders();
-    const order = orders.find((entry) => entry.id === req.params.id);
+    const order = await redis.hget(ORDERS_KEY, req.params.id);
     if (!order) return res.status(404).json({ error: "Order not found." });
     order.status = status;
     order.updatedAt = new Date().toISOString();
-    await writeOrders(orders);
+    await saveOrder(order);
     res.json(order);
   } catch (error) { next(error); }
 });
@@ -309,3 +294,5 @@ app.use((error, _req, res, _next) => {
 app.listen(PORT, () => {
   console.log(`Online Food Ordering System API running at http://localhost:${PORT}`);
 });
+
+export default app;
