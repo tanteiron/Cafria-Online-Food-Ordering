@@ -6,7 +6,7 @@ import logo from "./assets/logo.png";
 
 
 
-      const API = "https://cafria-online-food-ordering-e7au.vercel.app";
+   const API = "https://cafria-online-food-ordering-e7au.vercel.app";
 const money = (amount) => `₱${Number(amount || 0).toFixed(2)}`;
 
 
@@ -16,6 +16,7 @@ export default function App() {
   const [category, setCategory] = useState("All");
   const [search, setSearch] = useState("");
   const [customerName, setCustomerName] = useState("");
+  const [phoneNumber, setPhoneNumber] = useState("");
   const [orderType, setOrderType] = useState("Manual");
   const [paymentMethod, setPaymentMethod] = useState("Cash");
   const [activeTab, setActiveTab] = useState("Order Food");
@@ -119,6 +120,10 @@ export default function App() {
       setNotice("Please add food to your order first.");
       return;
     }
+    if (paymentMethod === "GCash" && !/^(?:\+?63|0)9\d{9}$/.test(phoneNumber.replace(/[\s\-()]/g, ""))) {
+      setNotice("Please enter a valid GCash mobile number (e.g. 09123456789).");
+      return;
+    }
     setSubmitting(true);
     setNotice("");
     try {
@@ -129,6 +134,7 @@ export default function App() {
           customerName: customerName.trim() || "Guest",
           orderType,
           paymentMethod,
+          phoneNumber: paymentMethod === "GCash" ? phoneNumber.trim() : undefined,
           items: cartItems.map(({ id, quantity }) => ({
             id,
             quantity
@@ -141,6 +147,7 @@ export default function App() {
       setReceiptOrder(data);
       setCart({});
       setCustomerName("");
+      setPhoneNumber("");
       await loadOrders();
       setNotice(`Order #${data.number} placed successfully.`);
     } catch (error) {
@@ -289,7 +296,7 @@ export default function App() {
                   <div className="column-orders">
                     {columnOrders.map((order) => <article className="order-ticket" key={order.id}>
                       <div className="ticket-top"><span className="ticket-number">#{order.number}</span><span className={`order-type ${order.orderType === "QR Code" ? "qr-type" : ""}`}>{order.orderType}</span></div>
-                      <div className="ticket-customer">{order.customerName}</div><div className="ticket-time">{new Date(order.createdAt).toLocaleString()}</div>
+                      <div className="ticket-customer">{order.customerName}{order.phoneNumber && <small> · {order.phoneNumber}</small>}</div><div className="ticket-time">{new Date(order.createdAt).toLocaleString()}</div>
                       <div className="ticket-items">{order.items.map((item) => <div className="ticket-item" key={item.id}><span>{item.emoji} {item.name}</span><b>×{item.quantity}</b></div>)}</div>
                       <div className="ticket-total"><span>{order.paymentMethod} · {order.paymentStatus}</span><b>{money(order.total)}</b></div>
                       <div className="ticket-actions">
@@ -367,7 +374,11 @@ export default function App() {
           <button className={`payment-choice ${paymentMethod === "Cash" ? "selected" : ""}`} onClick={() => setPaymentMethod("Cash")}><span className="cash-logo">₱</span><span><b>Cash</b><small>Pay at counter</small></span><span className="choice-radio">{paymentMethod === "Cash" ? "●" : ""}</span></button>
           <button className={`payment-choice ${paymentMethod === "GCash" ? "selected" : ""}`} onClick={() => setPaymentMethod("GCash")}><span className="gcash-logo">G</span><span><b>GCash</b><small>Demo selection only</small></span><span className="choice-radio">{paymentMethod === "GCash" ? "●" : ""}</span></button>
         </div>
-        {paymentMethod === "GCash" && <p className="payment-note">Demo mode: GCash is recorded as selected; no real payment is processed.</p>}
+        {paymentMethod === "GCash" && <>
+          <label className="field-label" htmlFor="gcashPhone">GCash mobile number (required)</label>
+          <input className="text-field" id="gcashPhone" type="tel" inputMode="numeric" value={phoneNumber} onChange={e => setPhoneNumber(e.target.value)} placeholder="09123456789" maxLength={16} required />
+          <p className="payment-note">Demo mode: GCash is recorded as selected; no real payment is processed.</p>
+        </>}
         <label className="field-label">Ordering ticket</label><div className="choice-grid">
           <button className={`choice-card ${orderType === "Manual" ? "selected" : ""}`} onClick={() => setOrderType("Manual")}><span className="choice-icon">☰</span><span><b>Manual</b><small>Standard order</small></span><span className="choice-radio">{orderType === "Manual" ? "●" : ""}</span></button>
           <button className={`choice-card ${orderType === "QR Code" ? "selected" : ""}`} onClick={() => setOrderType("QR Code")}><span className="choice-icon">▦</span><span><b>QR ticket</b><small>Generate a QR ticket</small></span><span className="choice-radio">{orderType === "QR Code" ? "●" : ""}</span></button>
@@ -396,7 +407,7 @@ export default function App() {
             </div>
           ))}</div>
           <div className="receipt-total"><span>Total</span><strong>{money(receiptOrder.total)}</strong></div>
-          <div className="receipt-info">{receiptIsHistory && <><span>Customer</span><b>{receiptOrder.customerName}</b><span>Date</span><b>{new Date(receiptOrder.createdAt).toLocaleString()}</b></>}<span>Ordering method</span><b>{receiptOrder.orderType}</b><span>Payment</span><b>{receiptOrder.paymentMethod}</b><span>Payment status</span><b>{receiptOrder.paymentStatus}</b></div>
+          <div className="receipt-info">{receiptIsHistory && <><span>Customer</span><b>{receiptOrder.customerName}</b><span>Date</span><b>{new Date(receiptOrder.createdAt).toLocaleString()}</b></>}<span>Ordering method</span><b>{receiptOrder.orderType}</b><span>Payment</span><b>{receiptOrder.paymentMethod}</b><span>Payment status</span><b>{receiptOrder.paymentStatus}</b>{receiptOrder.phoneNumber && <><span>GCash number</span><b>{receiptOrder.phoneNumber}</b></>}</div>
           {receiptOrder.paymentMethod === "GCash" && <p className="payment-note">Demo only — no real GCash payment has been sent or confirmed.</p>}
           <div className="print-only receipt-print-foot">Thank you for ordering!<br />Please keep this receipt.</div>
           <button className="secondary-button print-button no-print" onClick={() => window.print()}>🖨 Print receipt</button>
