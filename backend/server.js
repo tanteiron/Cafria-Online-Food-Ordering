@@ -288,6 +288,28 @@ app.post("/api/orders", async (req, res, next) => {
   } catch (error) { next(error); }
 });
 
+// Customer's phone polls this to find out when the cashier has marked the order as paid.
+app.get("/api/orders/:id", async (req, res, next) => {
+  try {
+    const order = await redis.hget(ORDERS_KEY, req.params.id);
+    if (!order) return res.status(404).json({ error: "Order not found." });
+    res.json(order);
+  } catch (error) { next(error); }
+});
+
+// Cashier confirms payment received.
+app.patch("/api/orders/:id/pay", async (req, res, next) => {
+  try {
+    const order = await redis.hget(ORDERS_KEY, req.params.id);
+    if (!order) return res.status(404).json({ error: "Order not found." });
+    order.paymentStatus = "Paid";
+    order.paidAt = new Date().toISOString();
+    order.updatedAt = order.paidAt;
+    await saveOrder(order);
+    res.json(order);
+  } catch (error) { next(error); }
+});
+
 app.patch("/api/orders/:id/status", async (req, res, next) => {
   try {
     const { status } = req.body || {};

@@ -32,6 +32,53 @@ export default function App() {
   const [mealQty, setMealQty] = useState(1);
   const [showCart, setShowCart] = useState(false);
   const [showPayment, setShowPayment] = useState(false);
+  const [myOrderId, setMyOrderId] = useState(() => {
+    try { return localStorage.getItem("cafriaMyOrderId") || ""; } catch { return ""; }
+  });
+
+  function trackOrder(id) {
+    setMyOrderId(id);
+    try {
+      if (id) localStorage.setItem("cafriaMyOrderId", id);
+      else localStorage.removeItem("cafriaMyOrderId");
+    } catch { /* storage unavailable */ }
+  }
+
+  // Customer's phone: watch the order until the cashier marks it as paid, then show the receipt.
+  useEffect(() => {
+    if (!myOrderId) return;
+    let cancelled = false;
+    async function check() {
+      try {
+        const response = await fetch(`${API}/api/orders/${myOrderId}`);
+        if (response.status === 404) { trackOrder(""); return; }
+        if (!response.ok) return;
+        const data = await response.json();
+        if (cancelled) return;
+        setReceiptOrder((current) => (current && current.id === data.id ? data : current));
+        if (data.paymentStatus === "Paid") {
+          setReceiptIsHistory(false);
+          setReceiptOrder(data);
+          setNotice(`Payment received for order #${data.number}. Here is your receipt.`);
+          trackOrder("");
+        }
+      } catch { /* try again on next tick */ }
+    }
+    check();
+    const timer = window.setInterval(check, 4000);
+    return () => { cancelled = true; window.clearInterval(timer); };
+  }, [myOrderId]);
+
+  async function markPaid(orderId) {
+    try {
+      const response = await fetch(`${API}/api/orders/${orderId}/pay`, { method: "PATCH" });
+      const data = await response.json();
+      if (!response.ok) throw new Error(data.error || "Could not update payment.");
+      setOrders((current) => current.map((order) => order.id === orderId ? data : order));
+    } catch (error) {
+      setNotice(error.message);
+    }
+  }
 
   async function loadMenu() {
     try {
@@ -145,6 +192,7 @@ export default function App() {
       if (!response.ok) throw new Error(data.error || "Could not place order.");
       setReceiptIsHistory(false);
       setReceiptOrder(data);
+      trackOrder(data.id);
       setCart({});
       setCustomerName("");
       setPhoneNumber("");
@@ -221,6 +269,11 @@ export default function App() {
         </nav>
         <button className="queue-shortcut cart-shortcut" onClick={() => setShowCart(true)}>🛒 Your order <span>{itemCount}</span></button>
       </header>
+
+      {/* Floating button so phone users can always reach their order */}
+      <button className="floating-cart" onClick={() => setShowCart(true)} aria-label="Open your order">
+        🛒 <span className="floating-cart-label">Your order</span> <span className="floating-cart-count">{itemCount}</span>
+      </button>
 
       <main>
         {activeTab === "Order Food" ? (
@@ -303,6 +356,7 @@ export default function App() {
                         {order.status === "Confirmed" && <button className="status-button start" onClick={() => updateStatus(order.id, "Preparing")}>Start preparing</button>}
                         {order.status === "Preparing" && <button className="status-button ready" onClick={() => updateStatus(order.id, "Ready")}>Mark ready</button>}
                         {order.status === "Ready" && <button className="status-button complete" onClick={() => updateStatus(order.id, "Completed")}>Complete order</button>}
+                        {order.paymentStatus !== "Paid" && <button className="status-button pay" onClick={() => markPaid(order.id)}>💵 Mark as paid</button>}
                         {order.status === "Completed" && <span className="completed-label">✓ Completed</span>}
                       </div>
                     </article>)}
@@ -393,8 +447,8 @@ export default function App() {
       {receiptOrder && <div className="modal-backdrop" onClick={() => setReceiptOrder(null)}>
         <section className="receipt-modal" onClick={(e) => e.stopPropagation()} role="dialog" aria-modal="true" aria-labelledby="receipt-title">
           <button className="modal-close" onClick={() => setReceiptOrder(null)} aria-label="Close receipt">×</button>
-          <div className="print-only receipt-print-head"><strong>Crave.</strong><span>ONLINE FOOD ORDERING SYSTEM</span><small>{new Date(receiptOrder.createdAt).toLocaleString()} · {receiptOrder.customerName}</small></div>
-          <div className="receipt-check">✓</div><span className="eyebrow">{receiptIsHistory ? "RECEIPT" : "ORDER RECEIVED"}</span><h2 id="receipt-title">{receiptIsHistory ? `Order #${receiptOrder.number}` : "You're all set!"}</h2><p className="receipt-subtitle">{receiptIsHistory ? "Saved copy of this order's receipt." : "Keep your order number for collection."}</p>
+          <div className="print-only receipt-print-head"><strong>Cafria.</strong><span>ONLINE FOOD ORDERING SYSTEM</span><small>{new Date(receiptOrder.createdAt).toLocaleString()} · {receiptOrder.customerName}</small></div>
+          <div className="receipt-check">{receiptOrder.paymentStatus === "Paid" ? "✓" : "⏳"}</div><span className="eyebrow">{receiptIsHistory ? "RECEIPT" : receiptOrder.paymentStatus === "Paid" ? "PAID" : "ORDER RECEIVED"}</span><h2 id="receipt-title">{receiptIsHistory ? `Order #${receiptOrder.number}` : receiptOrder.paymentStatus === "Paid" ? "Payment received!" : "Please pay at the cashier"}</h2><p className="receipt-subtitle">{receiptIsHistory ? "Saved copy of this order's receipt." : receiptOrder.paymentStatus === "Paid" ? "Thank you! Keep this receipt and your order number." : "Show your order number to the cashier. Your receipt will appear here automatically once paid."}</p>
           <div className="receipt-number"><small>YOUR ORDER NUMBER</small><strong>#{receiptOrder.number}</strong><span className="status-pill">{receiptOrder.status}</span></div>
           {receiptOrder.qrCode && <div className="qr-ticket"><img src={receiptOrder.qrCode} alt={`QR code for order ${receiptOrder.number}`} /><p>Scan this QR code to view your order ticket.</p></div>}
           <div className="receipt-lines">{receiptOrder.items.map((item) => (
@@ -410,10 +464,12 @@ export default function App() {
           <div className="receipt-info">{receiptIsHistory && <><span>Customer</span><b>{receiptOrder.customerName}</b><span>Date</span><b>{new Date(receiptOrder.createdAt).toLocaleString()}</b></>}<span>Ordering method</span><b>{receiptOrder.orderType}</b><span>Payment</span><b>{receiptOrder.paymentMethod}</b><span>Payment status</span><b>{receiptOrder.paymentStatus}</b>{receiptOrder.phoneNumber && <><span>GCash number</span><b>{receiptOrder.phoneNumber}</b></>}</div>
           {receiptOrder.paymentMethod === "GCash" && <p className="payment-note">Demo only — no real GCash payment has been sent or confirmed.</p>}
           <div className="print-only receipt-print-foot">Thank you for ordering!<br />Please keep this receipt.</div>
-          <button className="secondary-button print-button no-print" onClick={() => window.print()}>🖨 Print receipt</button>
+          {receiptOrder.paymentStatus === "Paid" && <button className="secondary-button print-button no-print" onClick={() => window.print()}>🖨 Print receipt</button>}
           {receiptIsHistory
             ? <button className="place-order-button no-print" onClick={() => setReceiptOrder(null)}>Back to receipts <span>←</span></button>
-            : <button className="place-order-button no-print" onClick={() => { setReceiptOrder(null); setActiveTab("Order Queue"); loadOrders(); }}>View order queue <span>→</span></button>}
+            : receiptOrder.paymentStatus === "Paid"
+              ? <button className="place-order-button no-print" onClick={() => setReceiptOrder(null)}>Done <span>✓</span></button>
+              : <button className="place-order-button no-print" onClick={() => setReceiptOrder(null)}>Close (receipt appears when paid) <span>→</span></button>}
         </section>
       </div>}
     </div>
