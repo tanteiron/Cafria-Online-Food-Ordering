@@ -178,6 +178,13 @@ const ADDON_CATALOG = [
 
 const VALID_STATUSES = ["Confirmed", "Preparing", "Ready", "Completed"];
 
+// Accepts 09XXXXXXXXX, +639XXXXXXXXX or 639XXXXXXXXX (spaces/dashes allowed) and returns 09XXXXXXXXX.
+function normalizePhone(value) {
+  const cleaned = String(value || "").replace(/[\s\-()]/g, "");
+  const match = cleaned.match(/^(?:\+?63|0)(9\d{9})$/);
+  return match ? `0${match[1]}` : null;
+}
+
 // Each order is stored as its own entry in a Redis hash, keyed by order id.
 async function readOrders() {
   const all = await redis.hgetall(ORDERS_KEY);
@@ -205,7 +212,7 @@ app.get("/api/orders", async (_req, res, next) => {
 
 app.post("/api/orders", async (req, res, next) => {
   try {
-    const { customerName, items, orderType = "Manual", paymentMethod = "Cash" } = req.body || {};
+    const { customerName, items, orderType = "Manual", paymentMethod = "Cash", phoneNumber: rawPhone } = req.body || {};
     if (!Array.isArray(items) || items.length === 0) {
       return res.status(400).json({ error: "Please add at least one food item." });
     }
@@ -214,6 +221,15 @@ app.post("/api/orders", async (req, res, next) => {
     }
     if (!["GCash", "Cash"].includes(paymentMethod)) {
       return res.status(400).json({ error: "Choose GCash or Cash payment." });
+    }
+
+    // GCash orders must include a valid Philippine mobile number.
+    let phoneNumber = null;
+    if (paymentMethod === "GCash") {
+      phoneNumber = normalizePhone(rawPhone);
+      if (!phoneNumber) {
+        return res.status(400).json({ error: "Please enter a valid GCash mobile number (e.g. 09123456789)." });
+      }
     }
 
     const cleanItems = [];
@@ -245,6 +261,7 @@ app.post("/api/orders", async (req, res, next) => {
       id: randomUUID(),
       number: await nextOrderNumber(),
       customerName: String(customerName || "Guest").trim().slice(0, 80) || "Guest",
+      ...(phoneNumber && { phoneNumber }),
       items: cleanItems,
       total: cleanItems.reduce((sum, item) => sum + item.price * item.quantity, 0),
       orderType,
