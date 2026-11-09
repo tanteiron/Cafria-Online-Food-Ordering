@@ -152,5 +152,28 @@
     "status": "Completed",
     "createdAt": "2026-10-25T14:33:04.111Z",
     "updatedAt": "2026-10-25T14:33:09.421Z"
+  },
+  {
+    "id": "046aeaf0-635d-46d0-9242-d7a59d47a33d",
+    "number": "0006",
+    "customerName": "Guest",
+    "items": [
+      {
+        "id": "bacon-silog",
+        "name": "Bacon Silog",
+        "emoji": "🍲",
+        "price": 125,
+        "basePrice": 125,
+        "addons": [],
+        "quantity": 1
+      }
+    ],
+    "total": 125,
+    "orderType": "Manual",
+    "paymentMethod": "Cash",
+    "paymentStatus": "Pay at counter",
+    "status": "Completed",
+    "createdAt": "2026-11-09T04:21:40.529Z",
+    "updatedAt": "2026-11-09T04:21:46.734Z"
   }
 ]

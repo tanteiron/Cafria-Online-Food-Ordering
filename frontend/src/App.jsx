@@ -104,7 +104,16 @@ export default function App() {
     }));
 
     setSelectedMeal(null);
+    
   }
+  function removeMeal(id) {
+  setCart((current) => {
+    const next = { ...current };
+    delete next[id];
+    return next;
+  });
+}
+
   async function placeOrder() {
     if (!cartItems.length) {
       setNotice("Please add food to your order first.");
