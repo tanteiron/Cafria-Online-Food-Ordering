@@ -173,15 +173,25 @@ const VALID_STATUSES = ["Confirmed", "Preparing", "Ready", "Completed"];
 
 async function readOrders() {
   try {
-    return JSON.parse(await fs.readFile(DB_FILE, "utf8"));
+    const raw = await fs.readFile(DB_FILE, "utf8");
+    if (!raw.trim()) return [];                 // empty file
+    const data = JSON.parse(raw);
+    return Array.isArray(data) ? data : [];
   } catch (error) {
     if (error.code === "ENOENT") return [];
+    if (error instanceof SyntaxError) {          // corrupted JSON
+      console.error("orders.json is corrupted, backing it up and starting fresh.");
+      await fs.rename(DB_FILE, `${DB_FILE}.bak-${Date.now()}`).catch(() => {});
+      return [];
+    }
     throw error;
   }
 }
 
 async function writeOrders(orders) {
-  await fs.writeFile(DB_FILE, JSON.stringify(orders, null, 2));
+  const tmp = `${DB_FILE}.tmp`;
+  await fs.writeFile(tmp, JSON.stringify(orders, null, 2));
+  await fs.rename(tmp, DB_FILE);                 // avoids half-written files
 }
 
 function nextOrderNumber(orders) {
@@ -201,7 +211,7 @@ app.get("/api/orders", async (_req, res, next) => {
 
 app.post("/api/orders", async (req, res, next) => {
   try {
-    const { customerName, items, orderType = "Manual", paymentMethod = "Cash" } = req.body;
+   const { customerName, items, orderType = "Manual", paymentMethod = "Cash" } = req.body || {};
     if (!Array.isArray(items) || items.length === 0) {
       return res.status(400).json({ error: "Please add at least one food item." });
     }
@@ -233,7 +243,9 @@ app.post("/api/orders", async (req, res, next) => {
   id: menuItem.id,
   name: menuItem.name,
   emoji: menuItem.emoji,
-  price: menuItem.price,
+  price: menuItem.price + addonTotal,
+  basePrice: menuItem.price,
+  addons: chosenAddons.map(({ id, name, price }) => ({ id, name, price })),
   quantity
 });
     }
