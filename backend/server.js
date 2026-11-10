@@ -325,6 +325,15 @@ app.patch("/api/orders/:id/status", async (req, res, next) => {
   } catch (error) { next(error); }
 });
 
+// Delete a receipt/order permanently.
+app.delete("/api/orders/:id", async (req, res, next) => {
+  try {
+    const removed = await redis.hdel(ORDERS_KEY, req.params.id);
+    if (!removed) return res.status(404).json({ error: "Order not found." });
+    res.json({ ok: true, id: req.params.id });
+  } catch (error) { next(error); }
+});
+
 app.use((error, _req, res, _next) => {
   console.error(error);
   res.status(500).json({ error: "Something went wrong on the server." });
