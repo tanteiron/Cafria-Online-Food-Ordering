@@ -220,6 +220,21 @@ export default function App() {
     }
   }
 
+  async function deleteOrder(order) {
+    if (!window.confirm(`Delete receipt #${order.number}? This cannot be undone.`)) return;
+    try {
+      const response = await fetch(`${API}/api/orders/${order.id}`, { method: "DELETE" });
+      const data = await response.json().catch(() => ({}));
+      if (!response.ok && response.status !== 404) throw new Error(data.error || "Could not delete receipt.");
+      setOrders((current) => current.filter((o) => o.id !== order.id));
+      setReceiptOrder((current) => (current && current.id === order.id ? null : current));
+      if (myOrderId === order.id) trackOrder("");
+      setNotice(`Receipt #${order.number} deleted.`);
+    } catch (error) {
+      setNotice(error.message || "Could not delete receipt.");
+    }
+  }
+
   function openReceipt(order) {
     setReceiptIsHistory(true);
     setReceiptOrder(order);
@@ -383,7 +398,7 @@ export default function App() {
                 <div className="history-items">{order.items.map((item) => `${item.emoji} ${item.name} ×${item.quantity}`).join(" · ")}</div>
                 <div className="history-pay"><span>{order.paymentMethod} · {order.paymentStatus}</span><span className={`order-type ${order.orderType === "QR Code" ? "qr-type" : ""}`}>{order.orderType}</span></div>
                 <div className="history-total"><b>{money(order.total)}</b><span className="status-pill">{order.status}</span></div>
-                <button className="secondary-button history-view" onClick={() => openReceipt(order)}>View receipt</button>
+                <div className="history-actions"><button className="secondary-button history-view" onClick={() => openReceipt(order)}>View receipt</button><button className="delete-button history-delete" onClick={() => deleteOrder(order)} title="Delete this receipt">🗑 Delete</button></div>
               </article>)}
               {receiptHistory.length === 0 && <div className="empty-state">{orders.length ? "No receipts match your search." : "No receipts yet. Placed orders will appear here."}</div>}
             </div>
@@ -466,7 +481,7 @@ export default function App() {
           <div className="print-only receipt-print-foot">Thank you for ordering!<br />Please keep this receipt.</div>
           {receiptOrder.paymentStatus === "Paid" && <button className="secondary-button print-button no-print" onClick={() => window.print()}>🖨 Print receipt</button>}
           {receiptIsHistory
-            ? <button className="place-order-button no-print" onClick={() => setReceiptOrder(null)}>Back to receipts <span>←</span></button>
+            ? <><button className="place-order-button no-print" onClick={() => setReceiptOrder(null)}>Back to receipts <span>←</span></button><button className="delete-button delete-wide no-print" onClick={() => deleteOrder(receiptOrder)}>🗑 Delete receipt</button></>
             : receiptOrder.paymentStatus === "Paid"
               ? <button className="place-order-button no-print" onClick={() => setReceiptOrder(null)}>Done <span>✓</span></button>
               : <button className="place-order-button no-print" onClick={() => setReceiptOrder(null)}>Close (receipt appears when paid) <span>→</span></button>}

@@ -2036,7 +2036,7 @@ input:focus-visible {
     order: 3
   }
 
-  .history-view {
+  .history-actions {
     grid-column: 1/-1;
     order: 4
   }
@@ -2314,4 +2314,35 @@ input:focus-visible {
   background: #20231f;
   color: #fff;
   margin-bottom: 8px;
+}
+
+/* Delete receipt */
+.history-actions {
+  display: flex;
+  gap: 8px;
+  align-items: center
+}
+
+.delete-button {
+  padding: 9px 12px;
+  font-size: 10px;
+  font-weight: 700;
+  white-space: nowrap;
+  color: #c0392b;
+  background: #fff;
+  border: 1px solid #e8b9b3;
+  border-radius: 9px;
+  cursor: pointer;
+  transition: background .15s, color .15s
+}
+
+.delete-button:hover {
+  background: #c0392b;
+  color: #fff
+}
+
+.delete-wide {
+  width: 100%;
+  margin-top: 8px;
+  padding: 12px
 }
